@@ -489,11 +489,13 @@ void processSerialCommand(char* command) {
   else if (strncmp(params, "load ", 5) == 0) { loadPreset(atoi(params + 5)); }
   else if (strncmp(params, "startup ", 8) == 0) {
     int index = atoi(params + 8);
-    if (index >= 0 && index <= NUM_PRESETS) { 
-      preferences.putUChar("startupMode", index); 
-      Serial.println("Startup mode set to " + String(index) + ". (0=Default, 1-5=User)"); 
-    } else { 
-      Serial.println("Error: Mode index must be between 0 and 5."); 
+    if (index >= 0 && index <= NUM_PRESETS) {
+      preferences.putUChar("startupMode", index);
+      Serial.print(F("Startup mode set to "));
+      Serial.print(index);
+      Serial.println(F(". (0=Default, 1-5=User)"));
+    } else {
+      Serial.println(F("Error: Mode index must be between 0 and 5."));
     }
   }
   else if (strncmp(params, "main ", 5) == 0) processMainCommand(trimWhitespace(params + 5));
@@ -504,58 +506,164 @@ void processSerialCommand(char* command) {
   else if (strcmp(params, "patterns") == 0) printPatterns();
   else if (strcmp(params, "reset") == 0) resetToDefaults();
   else if (strcmp(params, "help") == 0) printHelp();
-  else Serial.println("Unknown command. Type 'help' for available commands.");
+  else Serial.println(F("Unknown command. Type 'help' for available commands."));
 }
 
 void processMainCommand(char* params) {
   bool needsSave = true;
-  if (strncmp(params, "pattern ", 8) == 0) { setMainPattern(trimWhitespace(params + 8)); mainConfig.isRandom = false; }
-  else if (strncmp(params, "color1 ", 7) == 0) { setMainColor(trimWhitespace(params + 7), 1); mainConfig.isRandom = false; }
-  else if (strncmp(params, "color2 ", 7) == 0) { setMainColor(trimWhitespace(params + 7), 2); mainConfig.isRandom = false; }
+  if (strncmp(params, "pattern ", 8) == 0) {
+    setMainPattern(trimWhitespace(params + 8));
+    mainConfig.isRandom = false;
+  }
+  else if (strncmp(params, "color1 ", 7) == 0) {
+    setMainColor(trimWhitespace(params + 7), 1);
+    mainConfig.isRandom = false;
+  }
+  else if (strncmp(params, "color2 ", 7) == 0) {
+    setMainColor(trimWhitespace(params + 7), 2);
+    mainConfig.isRandom = false;
+  }
   else if (strncmp(params, "eyemode ", 8) == 0) {
       char* mode = trimWhitespace(params + 8);
-      if (strcmp(mode, "chopper") == 0) { mainConfig.chopperEyeMode = true; Serial.println("Chopper eye mode enabled."); } 
-      else { mainConfig.chopperEyeMode = false; Serial.println("Default eye mode enabled."); }
+      if (strcmp(mode, "chopper") == 0) {
+        mainConfig.chopperEyeMode = true;
+        Serial.println(F("Chopper eye mode enabled."));
+      } else {
+        mainConfig.chopperEyeMode = false;
+        Serial.println(F("Default eye mode enabled."));
+      }
   } else if (strncmp(params, "palette ", 8) == 0) {
-      char* p = trimWhitespace(params + 8); int idx = atoi(p) - 1; char* c = strchr(p, ' ');
-      if (c != nullptr && idx >= 0 && idx < PALETTE_SIZE) setPaletteColor(idx, trimWhitespace(c + 1));
-      else Serial.println("Invalid format. Use: main palette <1-5> <color>");
+      char* p = trimWhitespace(params + 8);
+      int idx = atoi(p) - 1;
+      char* c = strchr(p, ' ');
+      if (c != nullptr && idx >= 0 && idx < PALETTE_SIZE) {
+        setPaletteColor(idx, trimWhitespace(c + 1));
+      } else {
+        Serial.println(F("Invalid format. Use: main palette <1-5> <color>"));
+      }
       mainConfig.isRandom = false;
   } else if (strncmp(params, "palettemode ", 12) == 0) {
-      char* state = trimWhitespace(params + 12); mainConfig.usePalette = (strcmp(state, "on") == 0);
-      Serial.println(String("Palette mode for chase/sparkle ") + (mainConfig.usePalette ? "enabled" : "disabled")); mainConfig.isRandom = false;
-  } else if (strncmp(params, "speed ", 6) == 0) { setMainSpeed(atoi(params + 6)); mainConfig.isRandom = false; }
-  else if (strncmp(params, "brightness ", 11) == 0) { setMainBrightness(atoi(params + 11)); }
-  else if (strcmp(params, "on") == 0) { mainConfig.enabled = true; Serial.println("Main dome enabled"); }
-  else if (strcmp(params, "off") == 0) { mainConfig.enabled = false; Serial.println("Main dome disabled"); }
+      char* state = trimWhitespace(params + 12);
+      mainConfig.usePalette = (strcmp(state, "on") == 0);
+      Serial.print(F("Palette mode for chase/sparkle "));
+      Serial.println(mainConfig.usePalette ? F("enabled") : F("disabled"));
+      mainConfig.isRandom = false;
+  } else if (strncmp(params, "speed ", 6) == 0) {
+    setMainSpeed(atoi(params + 6));
+    mainConfig.isRandom = false;
+  }
+  else if (strncmp(params, "brightness ", 11) == 0) {
+    setMainBrightness(atoi(params + 11));
+  }
+  else if (strcmp(params, "on") == 0) {
+    mainConfig.enabled = true;
+    Serial.println(F("Main dome enabled"));
+  }
+  else if (strcmp(params, "off") == 0) {
+    mainConfig.enabled = false;
+    Serial.println(F("Main dome disabled"));
+  }
   else if (strncmp(params, "random ", 7) == 0) {
-    char* state = trimWhitespace(params + 7); mainConfig.isRandom = (strcmp(state, "on") == 0);
-    Serial.println(String("Main dome random mode ") + (mainConfig.isRandom ? "enabled" : "disabled"));
-  } else { Serial.println("Unknown main command. See 'help'."); needsSave = false; }
+    char* state = trimWhitespace(params + 7);
+    mainConfig.isRandom = (strcmp(state, "on") == 0);
+    Serial.print(F("Main dome random mode "));
+    Serial.println(mainConfig.isRandom ? F("enabled") : F("disabled"));
+  } else {
+    Serial.println(F("Unknown main command. See 'help'."));
+    needsSave = false;
+  }
   if (needsSave) saveMainConfig();
 }
 
 void processComponentCommand(char* params, bool isPeriscope) {
-    int index = -1; char* command; String componentNameStr;
-    if (isPeriscope) { index = 3; command = params; componentNameStr = "Periscope"; } 
-    else {
+    int index = -1;
+    char* command;
+
+    if (isPeriscope) {
+      index = 3;
+      command = params;
+    } else {
         int eyeNum = params[0] - '1';
-        if (eyeNum >= 0 && eyeNum <= 2) { index = eyeNum; command = trimWhitespace(params + 1); componentNameStr = "Eye " + String(index + 1); } 
-        else { Serial.println("Eye number must be 1-3"); return; }
+        if (eyeNum >= 0 && eyeNum <= 2) {
+          index = eyeNum;
+          command = trimWhitespace(params + 1);
+        } else {
+          Serial.println(F("Eye number must be 1-3"));
+          return;
+        }
     }
+
     if (index == -1) return;
     bool manualOverride = true;
-    if (strncmp(command, "color1 ", 7) == 0) setComponentColor(index, trimWhitespace(command + 7), 1);
-    else if (strncmp(command, "color2 ", 7) == 0) setComponentColor(index, trimWhitespace(command + 7), 2);
-    else if (strncmp(command, "speed ", 6) == 0) setComponentSpeed(index, atoi(command + 6));
-    else if (strcmp(command, "single") == 0) { componentConfigs[index].twoColor = false; Serial.println(componentNameStr + " set to single color"); }
-    else if (strcmp(command, "dual") == 0) { componentConfigs[index].twoColor = true; Serial.println(componentNameStr + " set to dual color"); }
-    else if (strcmp(command, "on") == 0) { componentConfigs[index].enabled = true; Serial.println(componentNameStr + " enabled"); manualOverride = false; }
-    else if (strcmp(command, "off") == 0) { componentConfigs[index].enabled = false; Serial.println(componentNameStr + " disabled"); manualOverride = false; }
+
+    if (strncmp(command, "color1 ", 7) == 0) {
+      setComponentColor(index, trimWhitespace(command + 7), 1);
+    }
+    else if (strncmp(command, "color2 ", 7) == 0) {
+      setComponentColor(index, trimWhitespace(command + 7), 2);
+    }
+    else if (strncmp(command, "speed ", 6) == 0) {
+      setComponentSpeed(index, atoi(command + 6));
+    }
+    else if (strcmp(command, "single") == 0) {
+      componentConfigs[index].twoColor = false;
+      if (isPeriscope) {
+        Serial.println(F("Periscope set to single color"));
+      } else {
+        Serial.print(F("Eye "));
+        Serial.print(index + 1);
+        Serial.println(F(" set to single color"));
+      }
+    }
+    else if (strcmp(command, "dual") == 0) {
+      componentConfigs[index].twoColor = true;
+      if (isPeriscope) {
+        Serial.println(F("Periscope set to dual color"));
+      } else {
+        Serial.print(F("Eye "));
+        Serial.print(index + 1);
+        Serial.println(F(" set to dual color"));
+      }
+    }
+    else if (strcmp(command, "on") == 0) {
+      componentConfigs[index].enabled = true;
+      if (isPeriscope) {
+        Serial.println(F("Periscope enabled"));
+      } else {
+        Serial.print(F("Eye "));
+        Serial.print(index + 1);
+        Serial.println(F(" enabled"));
+      }
+      manualOverride = false;
+    }
+    else if (strcmp(command, "off") == 0) {
+      componentConfigs[index].enabled = false;
+      if (isPeriscope) {
+        Serial.println(F("Periscope disabled"));
+      } else {
+        Serial.print(F("Eye "));
+        Serial.print(index + 1);
+        Serial.println(F(" disabled"));
+      }
+      manualOverride = false;
+    }
     else if (strncmp(command, "random ", 7) == 0) {
-        char* state = trimWhitespace(command + 7); componentConfigs[index].isRandom = (strcmp(state, "on") == 0);
-        Serial.println(componentNameStr + " random mode " + (componentConfigs[index].isRandom ? "enabled" : "disabled")); manualOverride = false;
-    } else { Serial.println("Valid commands: color1, color2, speed, single, dual, random on/off, on, off"); return; }
+        char* state = trimWhitespace(command + 7);
+        componentConfigs[index].isRandom = (strcmp(state, "on") == 0);
+        if (isPeriscope) {
+          Serial.print(F("Periscope random mode "));
+        } else {
+          Serial.print(F("Eye "));
+          Serial.print(index + 1);
+          Serial.print(F(" random mode "));
+        }
+        Serial.println(componentConfigs[index].isRandom ? F("enabled") : F("disabled"));
+        manualOverride = false;
+    } else {
+      Serial.println(F("Valid commands: color1, color2, speed, single, dual, random on/off, on, off"));
+      return;
+    }
+
     if (manualOverride) componentConfigs[index].isRandom = false;
     saveComponentConfig(index);
 }
@@ -563,67 +671,131 @@ void processComponentCommand(char* params, bool isPeriscope) {
 // ################### SETTER & PARSER FUNCTIONS ###################
 void setMainPattern(const char* pattern) {
   PatternType oldPattern = mainConfig.pattern, newPattern = oldPattern;
-  if (strcmp(pattern, "original") == 0) newPattern = PATTERN_ORIGINAL; else if (strcmp(pattern, "blink") == 0) newPattern = PATTERN_BLINK;
-  else if (strcmp(pattern, "fade") == 0) newPattern = PATTERN_FADE; else if (strcmp(pattern, "rainbow") == 0) newPattern = PATTERN_RAINBOW;
-  else if (strcmp(pattern, "chase") == 0) newPattern = PATTERN_CHASE; else if (strcmp(pattern, "sparkle") == 0) newPattern = PATTERN_SPARKLE;
-  else if (strcmp(pattern, "breathe") == 0) newPattern = PATTERN_BREATHE; else if (strcmp(pattern, "solid") == 0) newPattern = PATTERN_SOLID;
-  else if (strcmp(pattern, "layer") == 0) newPattern = PATTERN_LAYER; else if (strcmp(pattern, "palette") == 0) newPattern = PATTERN_PALETTE;
-  else { Serial.println("Unknown pattern. Type 'patterns' for a list."); return; }
+  if (strcmp(pattern, "original") == 0) newPattern = PATTERN_ORIGINAL;
+  else if (strcmp(pattern, "blink") == 0) newPattern = PATTERN_BLINK;
+  else if (strcmp(pattern, "fade") == 0) newPattern = PATTERN_FADE;
+  else if (strcmp(pattern, "rainbow") == 0) newPattern = PATTERN_RAINBOW;
+  else if (strcmp(pattern, "chase") == 0) newPattern = PATTERN_CHASE;
+  else if (strcmp(pattern, "sparkle") == 0) newPattern = PATTERN_SPARKLE;
+  else if (strcmp(pattern, "breathe") == 0) newPattern = PATTERN_BREATHE;
+  else if (strcmp(pattern, "solid") == 0) newPattern = PATTERN_SOLID;
+  else if (strcmp(pattern, "layer") == 0) newPattern = PATTERN_LAYER;
+  else if (strcmp(pattern, "palette") == 0) newPattern = PATTERN_PALETTE;
+  else {
+    Serial.println(F("Unknown pattern. Type 'patterns' for a list."));
+    return;
+  }
   if (oldPattern != newPattern) {
-    memcpy(leds_main_buffer, leds_main, sizeof(leds_main)); transitionStartTime = millis(); inTransition = true;
-    mainConfig.pattern = newPattern; mainState = 0; originalPhase = true;
-    Serial.println(String("Main pattern set to: ") + pattern);
+    memcpy(leds_main_buffer, leds_main, sizeof(leds_main));
+    transitionStartTime = millis();
+    inTransition = true;
+    mainConfig.pattern = newPattern;
+    mainState = 0;
+    originalPhase = true;
+    Serial.print(F("Main pattern set to: "));
+    Serial.println(pattern);
   }
 }
 
 void setMainColor(char* colorStr, int colorNum) {
   CRGB color = parseColor(colorStr);
   if (color == CRGB::Black && strcmp(colorStr, "black") != 0 && strcmp(colorStr, "off") != 0) return;
-  if (colorNum == 1) mainConfig.color1 = color; else mainConfig.color2 = color;
-  Serial.println("Main color " + String(colorNum) + " set to: " + colorStr);
+  if (colorNum == 1) mainConfig.color1 = color;
+  else mainConfig.color2 = color;
+  Serial.print(F("Main color "));
+  Serial.print(colorNum);
+  Serial.print(F(" set to: "));
+  Serial.println(colorStr);
 }
 
 void setPaletteColor(int index, char* colorStr) {
     CRGB color = parseColor(colorStr);
     if (color == CRGB::Black && strcmp(colorStr, "black") != 0 && strcmp(colorStr, "off") != 0) return;
     mainConfig.colorPalette[index] = color;
-    Serial.println("Palette color " + String(index + 1) + " set to: " + colorStr);
+    Serial.print(F("Palette color "));
+    Serial.print(index + 1);
+    Serial.print(F(" set to: "));
+    Serial.println(colorStr);
 }
 
 void setComponentColor(int index, char* colorStr, int colorNum) {
   CRGB color = parseColor(colorStr);
   if (color == CRGB::Black && strcmp(colorStr, "black") != 0 && strcmp(colorStr, "off") != 0) return;
-  String name = (index < 3) ? "Eye " + String(index + 1) : "Periscope";
-  if (colorNum == 1) componentConfigs[index].color1 = color; else componentConfigs[index].color2 = color;
-  Serial.println(name + " color " + String(colorNum) + " set to: " + colorStr);
+  if (colorNum == 1) componentConfigs[index].color1 = color;
+  else componentConfigs[index].color2 = color;
+  if (index < 3) {
+    Serial.print(F("Eye "));
+    Serial.print(index + 1);
+  } else {
+    Serial.print(F("Periscope"));
+  }
+  Serial.print(F(" color "));
+  Serial.print(colorNum);
+  Serial.print(F(" set to: "));
+  Serial.println(colorStr);
 }
 
 void setMainSpeed(int speed) {
-  if (speed < 10 || speed > 5000) { Serial.println("Speed must be between 10 and 5000 ms"); return; }
+  if (speed < 10 || speed > 5000) {
+    Serial.println(F("Speed must be between 10 and 5000 ms"));
+    return;
+  }
   mainConfig.speed = speed;
-  Serial.println("Main speed set to: " + String(speed) + " ms");
+  Serial.print(F("Main speed set to: "));
+  Serial.print(speed);
+  Serial.println(F(" ms"));
 }
 
 void setComponentSpeed(int index, int speed) {
-  if (speed < 10 || speed > 5000) { Serial.println("Speed must be between 10 and 5000 ms"); return; }
+  if (speed < 10 || speed > 5000) {
+    Serial.println(F("Speed must be between 10 and 5000 ms"));
+    return;
+  }
   componentConfigs[index].blinkInterval = speed;
-  String name = (index < 3) ? "Eye " + String(index + 1) : "Periscope";
-  Serial.println(name + " speed set to: " + String(speed) + " ms");
+  if (index < 3) {
+    Serial.print(F("Eye "));
+    Serial.print(index + 1);
+  } else {
+    Serial.print(F("Periscope"));
+  }
+  Serial.print(F(" speed set to: "));
+  Serial.print(speed);
+  Serial.println(F(" ms"));
 }
 
 void setMainBrightness(int brightness) {
-  if (brightness < 1 || brightness > 255) { Serial.println("Brightness must be between 1 and 255"); return; }
+  if (brightness < 1 || brightness > 255) {
+    Serial.println(F("Brightness must be between 1 and 255"));
+    return;
+  }
   mainConfig.brightness = brightness;
   FastLED.setBrightness(brightness);
-  Serial.println("Main brightness set to: " + String(brightness));
+  Serial.print(F("Main brightness set to: "));
+  Serial.println(brightness);
 }
 
 CRGB parseColor(char* colorStr) {
-  for (int i=0; i<15; i++) if (strcmp(colorStr, COLOR_NAMES[i]) == 0) return COLORS[i];
+  for (int i=0; i<15; i++) {
+    if (strcmp(colorStr, COLOR_NAMES[i]) == 0) return COLORS[i];
+  }
   if (strcmp(colorStr, "black") == 0 || strcmp(colorStr, "off") == 0) return CRGB::Black;
   char* p1 = strchr(colorStr, ',');
-  if (p1) { char* p2 = strchr(p1 + 1, ','); if (p2) { *p1='\0'; *p2='\0'; int r=atoi(colorStr),g=atoi(p1+1),b=atoi(p2+1); *p1=',';*p2=','; if (r>=0&&r<=255&&g>=0&&g<=255&&b>=0&&b<=255) return CRGB(r,g,b); } }
-  Serial.println("Invalid color. Use a name (e.g., red) or RGB format (e.g., 255,100,0).");
+  if (p1) {
+    char* p2 = strchr(p1 + 1, ',');
+    if (p2) {
+      *p1 = '\0';
+      *p2 = '\0';
+      int r = atoi(colorStr);
+      int g = atoi(p1+1);
+      int b = atoi(p2+1);
+      *p1 = ',';
+      *p2 = ',';
+      if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
+        return CRGB(r, g, b);
+      }
+    }
+  }
+  Serial.println(F("Invalid color. Use a name (e.g., red) or RGB format (e.g., 255,100,0)."));
   return CRGB::Black;
 }
 
