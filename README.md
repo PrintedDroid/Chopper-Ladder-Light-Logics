@@ -1,234 +1,126 @@
-# Teeces ESP32 Logic Display Controller v4.2
-**Advanced ESP32-C3 based Teeces display controller for R2-D2 logic displays and PSI indicators**
+# ESP32 Chopper Dome Logics v5.2
+**Advanced ESP32-C3 Mini controller for Star Wars Chopper droid dome and eye lighting**
 
 ## 🤖 Project Overview
 
-This enhanced controller brings your R2-D2's logic displays to life with smooth animations, dynamic PSI control, and comprehensive JawaLite protocol support. Designed for builders who demand professional results with maximum flexibility.
+This enhanced controller brings your Chopper droid's dome and eye lighting to life with smooth animations, customizable patterns, and authentic "Chopper" eye animations. Designed for builders who demand professional results with maximum flexibility.
 
 ### Key Features
 
-- **📺 Multi-Display Control** - Front Logic Displays (TFLD/BFLD), Rear Logic Display (RLD)
-- **💡 Dual PSI Support** - Analog (MAX7219) or Digital (NeoPixel/WS2812B) with real-time color control
-- **⚡ JawaLite Protocol** - Full compatibility + v4.2 extensions (L/C/T99 commands)
-- **🎨 Dynamic PSI Colors** - 12-color palette with instant switching via C-Command
-- **💫 Brightness Control** - Direct L-Command for real-time intensity adjustment
-- **✨ Advanced Effects** - Alarm, Leia, March, Failure animations
-- **💾 Profile Management** - 5 persistent profiles with flash storage
-- **🎮 Interactive Config Menu** - Complete serial CLI with shortcuts and verbose mode
-- **🔧 Hardware Diagnostics** - Built-in testing for all components
-- **📝 Text Scrolling** - Latin + Aurabesh alphabets
-- **⚙️ Setup Wizard** - Guided first-time configuration
+- **🎨 Main Dome Control** - 19 WS2812B LEDs with 10 different animation patterns
+- **👁️ Triple Eye System** - Three 7-LED eye arrays with independent control
+- **🔭 Periscope LED** - Single LED with synchronized or independent control
+- **✨ Authentic Chopper Mode** - Movie-accurate alternating blue eyes with solid yellow third eye
+- **💾 Settings Persistence** - All configurations automatically saved and restored after restart
+- **🎲 Random Mode** - Automatic pattern, color, and speed randomization per component
+- **🎨 Color Palette System** - 5-color palettes for dynamic multi-color animations
+- **🌈 15 Predefined Colors** - Plus custom RGB support (0-255,0-255,0-255)
+- **🔘 Physical Button Control** - Short press cycles presets, long press toggles power
+- **💫 Smooth Transitions** - Crossfade effects between pattern changes
+- **📝 Serial Command Interface** - Real-time configuration via serial monitor
+- **🔧 5 User Presets** - Save and recall complete lighting states
+- **⚙️ Configurable LED Counts** - Easy adjustment at sketch top
 
 ---
 
 ## 📝 Changelog
 
-### Version 4.2 (2025-11-05)
+### Version 5.2 (2025-07)
 
-**JawaLite Protocol Extensions & CLI Enhancements**
+**Settings Persistence, Random Mode & Button Control**
 
-This major update extends the JawaLite protocol with three powerful new commands and significantly improves the user experience with better error handling, shortcuts, and debugging tools.
+This major update introduces persistent storage, randomization features, and physical button control with 5 pre-configured user presets.
 
-#### ⚡ New JawaLite Commands
+#### 🎯 New Features
 
-**1. L-Command - Brightness Control**
-- Direct brightness control without entering config mode
-- Format: `[address]L[0-15]`
-- Examples:
-  - `0L10` - Set all displays to brightness 10
-  - `3L15` - Set RLD to maximum brightness
-  - `4L5` - Set Front PSI to brightness 5
-- **Use Case**: Dynamic brightness adjustment during lightsaber battles, environmental changes
-- **Performance**: Instant application via `applyBrightnessSettings()`
+**1. Settings Persistence**
+- All configurations automatically saved using ESP32 Preferences library
+- Settings survive power cycles and restarts
+- No manual save commands required
+- Independent storage for each configuration parameter
 
-**2. C-Command - Digital PSI Color Control**
-- Real-time color changes for digital PSI strips
-- Format: `[address]C[pattern][colorIndex]`
-- Examples:
-  - `4C111` - Front PSI Pattern 1 = White (11)
-  - `5C28` - Rear PSI Pattern 2 = Pink (8)
-  - `4C14` - Front PSI Pattern 1 = Blue (4)
-- **Color Palette**: 12 colors (RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, CYAN, PURPLE, PINK, MAGENTA, LIME, WHITE)
-- **Use Case**: Dynamic color synchronization with events, music, droid behaviors
+**2. Random Mode**
+- Each component (Main Dome, Eyes 1-3, Periscope) can be set to random mode
+- Automatically changes patterns, colors, and speeds every 15 seconds
+- Serial feedback shows what was randomized
+- Enable/disable per component: `main random on`, `eye 1 random on`, etc.
 
-**3. T99-Command - Stop All Effects**
-- Explicit command to stop all running effects
-- Format: `0T99`
-- Returns displays to normal operation (EFF_NORM)
-- Cleaner alternative to implicit state changes
+**3. Physical Button Control (IO0)**
+- **Short Press (<3s)**: Cycle through modes
+  - Mode 0: Chopper Default (unchangeable authentic look)
+  - Modes 1-5: User Presets (fully customizable)
+- **Long Press (>3s)**: Toggle all lights ON/OFF
+- Mode cycles: Default → User 1 → User 2 → User 3 → User 4 → User 5 → Default
 
-#### 💬 Enhanced CLI Features
+**4. User Preset System**
+- 5 fully customizable user presets (User 1 to User 5)
+- Save current configuration: `save <1-5>`
+- Load saved preset: `load <1-5>`
+- Set startup mode: `startup <0-5>` (0=Default, 1-5=User)
+- Restore factory presets: `reset presets`
 
-**4. Descriptive Error Messages**
-- **Before**: Silent BEL tone (0x07)
-- **After**: Clear error messages with format examples
-  ```
-  ERROR: Unknown command 'X'. Valid: T/M/P/R/S/L/C/D. Type '??' for help.
-  ERROR: L command requires argument (0-15 for brightness)
-  ERROR: Color index must be 0-11
-  ```
-- Includes BEL tone for backwards compatibility
+**5. Pre-Configured Default Presets**
+- **User 1 (Agitated/Working)**: Fast sparkle dome, dual-color blinking eyes
+- **User 2 (Angry/Attack)**: Red breathing dome, red eyes/periscope
+- **User 3 (Happy/Celebratory)**: Rainbow dome, cyan/yellow eyes
+- **User 4 (Stealth/Undercover)**: Dim navy fade, slow blue eyes
+- **User 5 (Chopper Eyes + Palette)**: Authentic eyes with warm palette dome
 
-**5. Quick Help System**
-- Type `??` or `help` in normal operation mode
-- Displays complete JawaLite protocol reference
-- Shows format, addresses, commands, and examples
-- No need to consult documentation
+**6. Chopper Eye Mode**
+- Authentic "Chopper" animation: alternating blue on Eyes 1 & 2
+- Solid yellow on Eye 3
+- Enable: `main eyemode chopper`
+- Disable: `main eyemode default`
+- 400ms blink interval for movie accuracy
 
-**6. Command Confirmation Feedback**
-- All new commands provide visual confirmation
-  ```
-  Command: L, Address: 0, Brightness: 10 [All displays & PSIs]
-  Command: C, Address: 4, Pattern: 1, Color: 11 [Front PSI Color1]
-  ```
+**7. Layered Patterns & Color Palettes**
+- **Layer Pattern**: Combines breathe effect with sparkle overlay
+- **Palette Pattern**: Smooth cycling through 5 custom colors
+- Configure palette: `main palette <1-5> <color>`
+- Toggle palette mode for chase/sparkle: `main palettemode on`
 
-**7. Shorthand Commands**
-Power-user shortcuts for faster configuration:
-- `p1-p5` - Load profiles instantly (instead of `profile load X`)
-- `s` - Show settings (instead of `show`)
-- `w` - Run wizard (instead of `wizard`)
-- `d` - Run diagnostics (instead of `diagnostics`)
-- `q` - Quit config menu (instead of `exit`)
+**8. Enhanced Serial Interface**
+- Help system: `help` command shows all available commands
+- Status display: `status` shows complete configuration
+- Color list: `colors` shows 15 predefined color names
+- Pattern list: `patterns` shows all 10 available patterns
+- Reset command: `reset` returns to firmware defaults
 
-**8. Verbose Debug Mode**
-- Toggle with `verbose on/off` in config menu
-- Real-time command processing diagnostics
-- Shows:
-  - Command received (string + length)
-  - Address parsing
-  - Command character extraction
-  - Argument parsing
-  - Execution timing (milliseconds)
-- Example output:
-  ```
-  [DEBUG] Received: '0T1' (3 bytes)
-  [DEBUG] Parsed address: 0
-  [DEBUG] Command: T
-  [DEBUG] Argument: 1
-  [DEBUG] Executing command...
-  Command: T, Address: 0, Arg: 1
-  [DEBUG] Command completed in 2 ms
-  ```
-- **Use Cases**: Troubleshooting parsing errors, monitoring execution time, learning protocol structure
+#### 🔧 Hardware Configuration
 
-#### 📖 Documentation Updates
+- **Main Dome**: 19 LEDs on IO5 (WS2812B)
+- **Eye 1**: 7 LEDs on IO6 (WS2812B)
+- **Eye 2**: 7 LEDs on IO7 (WS2812B)
+- **Eye 3**: 7 LEDs on IO10 (WS2812B)
+- **Periscope**: 1 LED on IO4 (WS2812B)
+- **Button**: IO0 (internal pullup, active LOW)
 
-**9. Comprehensive README**
-- Section 4.7: L-Commands (Brightness Control)
-- Section 4.8: C-Commands (Digital PSI Color Control)
-- Section 4.9: Quick Help
-- Section 5.5: Shorthand Commands
-- Section 5.6: Verbose Debug Mode
-- Complete color palette reference
-- Usage examples for all new features
+#### ⚠️ Important Notes
 
-**10. Updated Boot Message**
-- Displays v4.2 features on startup
-- Shows new protocol extensions
-- Lists CLI improvements
-
-#### 🔧 Implementation Details
-
-- **Global Variable**: `verboseMode` (bool) tracks debug state
-- **Enhanced Parser**: `parseCommand()` with debug checkpoints
-- **Special Parsing**: C-Command uses pattern + colorIndex extraction
-- **Shortcuts**: 14 new aliases in `handleConfigCommands()`
-- **Zero Performance Impact**: Debug code only executes when verbose mode enabled
-
-#### ⚠️ Breaking Changes
-
-None! All changes are backward compatible:
-- ✅ All existing JawaLite commands work unchanged
-- ✅ BEL tone preserved for legacy systems
-- ✅ New commands optional (old code continues to work)
-
-#### 📊 Feature Metrics
-
-| Feature | Lines of Code | Performance Impact |
-|---------|---------------|-------------------|
-| L-Command | 50 | None (applies brightness directly) |
-| C-Command | 52 | None (updates on next PSI cycle) |
-| T99-Command | 5 | None (calls existing exitEffects()) |
-| Error Messages | 45 | Minimal (only on errors) |
-| Verbose Mode | 60 | Zero when disabled |
-| Shortcuts | 70 | None (simple command aliases) |
-| **Total** | **282** | **Zero when not in use** |
-
----
-
-### Version 4.1 (2025-10-20)
-
-**User Experience & Configuration Management**
-
-#### 🎨 User-Friendly Features
-
-**1. Setup Wizard**
-- Guided first-time configuration
-- PSI type selection (Analog/Digital)
-- Brightness level setup
-- Color scheme configuration
-- Profile saving
-
-**2. Hardware Diagnostics**
-- Tests all components automatically
-- Flash memory validation
-- Display testing (RLD, TFLD, BFLD)
-- PSI validation (Analog & Digital)
-- Watchdog timer check
-- Troubleshooting tips for wiring issues
-
-**3. Quick Presets**
-- Preset 1: Bright - Maximum brightness, fast scrolling
-- Preset 2: Dim - Low brightness for dark environments
-- Preset 3: KT - Colorful KT mode (White/Pink PSI)
-- Preset 4: Classic - Original analog PSI look
-- Preset 5: Rainbow - Colorful digital PSI rotation
-
-**4. Smart Suggestions**
-- Context-aware tips after commands
-- Configuration hints
-- Next-step recommendations
-
-**5. Enhanced Parameter Validation**
-- Range checking with helpful messages
-- Invalid value prevention
-- Current value comparison
-
-#### 💾 Profile Management
-
-- **Profile 1 (Standard)**: Read-only default profile
-- **Profile 2 (White/Pink)**: Read-only digital PSI preset
-- **Profiles 3-5 (User)**: Fully customizable, persistently saved
-
-Profile Commands:
-- `profile show` - Display active profile
-- `profile load <1-5>` - Switch to profile
-- `profile save` - Save changes (profiles 3-5 only)
-- `profile reset <3-5>` - Reset user profile
-
-#### 📊 Performance Improvements
-
-- Optimized EEPROM wear leveling
-- Reduced unnecessary flash writes
-- Improved boot time
-- Better memory management
+- **ESP32-C3 has only 2 RMT channels!**
+- This version uses bit-banging for additional strips to avoid RMT conflicts
+- **USE FASTLED LIBRARY 3.9.0!**
+- ESP32-C3 Mini board selection: "Lolin C3 Mini"
 
 ---
 
 ## 🔧 Hardware Requirements
 
 ### Core Components
-- **ESP32-C3 Mini** development board
-- **MAX7219 LED Matrix Controllers** (daisy-chained)
-  - 5x9 matrices for Front Logic Displays (TFLD/BFLD)
-  - 5x27 matrix for Rear Logic Display (RLD)
-- **PSIs** (choose one):
-  - **Analog**: LED arrays driven by MAX7219 chain
-  - **Digital**: Two 26-LED NeoPixel/WS2812B strips (default)
-- **5V Power Supply** (adequate for displays - minimum 2A recommended)
+- **ESP32-C3 Mini** development board (Lolin C3 Mini or compatible)
+- **5x WS2812B LED Strips/Rings:**
+  - 19 LEDs for Main Dome
+  - 3x 7 LEDs for Eyes
+  - 1 LED for Periscope
+- **Momentary Push Button** - NO (Normally Open) for mode control
+- **5V Power Supply** - Adequate current for all LEDs (minimum 2-3A recommended)
+  - Calculation: (19 + 7 + 7 + 7 + 1) × 60mA = ~2.5A maximum
+- **Level Shifter** (optional but recommended) - 3.3V to 5V for data lines
 
-### Recommended Carrier Board
-- **Teeces Logic Display Board** - Professional carrier board
+### Recommended Assembly
+- **Printed Droid Chopper Dome Kit** - Professional dome and electronics carrier
+- **Wire Management** - Proper routing for 5 independent LED strips
+- **Power Distribution** - Common 5V bus with adequate gauge wire
 
 ---
 
@@ -236,21 +128,28 @@ Profile Commands:
 
 ESP32-C3 Mini Pin Assignments:
 
-- **Rear Chain (RLD + Rear Analog PSI):**
+### LED Control Pins
+- **Main Dome (19 LEDs):**
+  - DATA: GPIO5
+
+- **Eye 1 (7 LEDs):**
+  - DATA: GPIO6
+
+- **Eye 2 (7 LEDs):**
   - DATA: GPIO7
-  - CLK: GPIO6
-  - CS: GPIO5
 
-- **Front Chain (TFLD + BFLD + Front Analog PSI):**
+- **Eye 3 (7 LEDs):**
+  - DATA: GPIO10
+
+- **Periscope (1 LED):**
   - DATA: GPIO4
-  - CLK: GPIO3
-  - CS: GPIO2
 
-- **Digital PSI 1 (Front):**
-  - DATA: GPIO8
-
-- **Digital PSI 2 (Rear):**
-  - DATA: GPIO9
+### Input Pin
+- **Mode Button:**
+  - PIN: GPIO0 (IO0)
+  - Configuration: INPUT_PULLUP (active LOW)
+  - Short press: Cycle modes
+  - Long press (>3s): Toggle power
 
 ---
 
@@ -264,7 +163,7 @@ ESP32-C3 Mini Pin Assignments:
    - Tools → Board → Board Manager → Search "ESP32" → Install
 
 2. **Board Configuration for ESP32-C3:**
-   - Board: "ESP32C3 Dev Module"
+   - Board: "ESP32C3 Dev Module" or "Lolin C3 Mini"
    - Upload Speed: "921600"
    - USB CDC On Boot: "Enabled"
    - Flash Size: "4MB"
@@ -272,304 +171,291 @@ ESP32-C3 Mini Pin Assignments:
 
 3. **Required Libraries:**
    Install via Arduino Library Manager:
-   - Adafruit NeoPixel (1.10.0+)
-   - LedControl (1.0.6+)
+   - **FastLED** - Version 3.9.0 (IMPORTANT: Do not use newer versions due to ESP32-C3 RMT limitations)
+
+4. **Upload the Sketch:**
+   - Open `Chopper_ladderlights_ESP32C3Mini_v5.2.ino`
+   - Select correct COM port
+   - Click Upload
+   - Open Serial Monitor at **115200 baud**
 
 ### Method 2: Upload Pre-Compiled Binary
 
 1. Download latest `.bin` file from releases
 2. Use ESP Flash Download Tool or esptool.py
 3. Flash at address 0x0
+4. Example esptool command:
+   ```bash
+   esptool.py --chip esp32c3 --port /dev/ttyUSB0 write_flash -z 0x0 Chopper_v5.2.bin
+   ```
 
 ---
 
-## 4. Normal Operation (JawaLite Serial Commands)
+## 🎮 Physical Button Controls
 
-The controller responds to standard "JawaLite" protocol commands at 9600 baud. This allows it to be controlled by other droid components (like a Marcduino) or via the serial monitor.
+The controller features a physical button on **GPIO0 (IO0)** with two functions:
 
-**Format:** `[address][command][argument]<CR>` (where `<CR>` is a carriage return).
+### Short Press (<3 seconds)
+Cycles through all 6 modes sequentially:
 
-### 4.1. Addresses
-| Address | Target |
-| :--- | :--- |
-| `0` | All displays |
-| `1` | Top FLD |
-| `2` | Bottom FLD |
-| `3` | Rear LD |
-| `4` | Front PSI |
-| `5` | Rear PSI |
-
-### 4.2. T Commands (Display State)
-| Command | Function |
-| :--- | :--- |
-| `T0` | Test mode (all LEDs on) |
-| `T1` | Random mode |
-| `T2` / `T3` / `T5` | Alarm effect |
-| `T4` | Failure effect |
-| `T6` | Leia effect |
-| `T10` | Star Wars text |
-| `T11` | March effect |
-| `T20` | Off (display blank) |
-| `T92` | Bargraph mode |
-| `T99` | **[NEW v4.2]** Stop all effects, return to normal operation |
-| `T100` | Text mode (displays text set by `M` command) |
-
-### 4.3. M Commands (Text)
-- `M[text]`: Sets the text to be displayed.
-- **Example:** `1MHELLO WORLD` sets the Top FLD to scroll "HELLO WORLD".
-
-### 4.4. P Commands (Alphabet)
-| Command | Function |
-| :--- | :--- |
-| `P60` | Use Latin alphabet |
-| `P61` | Use Aurabesh alphabet |
-
-### 4.5. R Commands (Random Style)
-- `R[0-6]`: Sets the density of the random display mode.
-- `0` = Sparse, `6` = Dense.
-
-### 4.6. S Commands (PSI State)
-| Command | Function |
-| :--- | :--- |
-| `S0` | Test (all on) |
-| `S1` | Random mode |
-| `S2` | Color 1 |
-| `S3` | Color 2 |
-| `S4` | Off |
-
-### 4.7. L Commands (Brightness Control) **[NEW v4.2]**
-
-The L-Command provides direct, immediate brightness control without entering the configuration menu. This is especially useful for dynamic lighting adjustments (e.g., during lightsaber battles or environmental changes).
-
-**Format:** `[address]L[brightness]`
-
-| Parameter | Description | Valid Range |
+| Mode | Name | Description |
 | :--- | :--- | :--- |
-| `address` | Target component | 0-5 (see section 4.1) |
-| `brightness` | Intensity level | 0 (Off) to 15 (Maximum) |
+| 0 | **Chopper Default** | Unchangeable authentic Chopper look (red chase dome, alternating blue eyes, yellow third eye, cyan periscope) |
+| 1 | **User Preset 1** | Agitated/Working mode (customizable) |
+| 2 | **User Preset 2** | Angry/Attack mode (customizable) |
+| 3 | **User Preset 3** | Happy/Celebratory mode (customizable) |
+| 4 | **User Preset 4** | Stealth/Undercover mode (customizable) |
+| 5 | **User Preset 5** | Chopper Eyes + Palette (customizable) |
 
-**Examples:**
+After mode 5, cycles back to mode 0.
+
+### Long Press (>3 seconds)
+Toggles ALL lights (dome + eyes + periscope) ON or OFF simultaneously.
+
+**Serial Feedback:**
 ```
-0L10   → Set all displays and PSIs to brightness 10
-3L15   → Set Rear Logic Display to maximum brightness
-4L5    → Set Front PSI to brightness 5
-0L0    → Turn off all displays
-```
-
-**Address Mapping:**
-- `0` - All displays and both analog PSIs
-- `1` - Top FLD (Front Logic Display)
-- `2` - Bottom FLD
-- `3` - RLD (Rear Logic Display)
-- `4` - Front PSI (analog only)
-- `5` - Rear PSI (analog only)
-
-**Use Cases:**
-- **Dynamic Environments**: Adjust brightness based on ambient light
-- **Lightsaber Combat**: Dim displays during battles
-- **Power Saving**: Reduce brightness when idle
-- **Show Synchronization**: Match brightness to audio/visual cues
-
-### 4.8. C Commands (Digital PSI Color Control) **[NEW v4.2]**
-
-The C-Command allows real-time color changes for digital PSI strips without entering configuration mode. This enables dynamic color synchronization with events, music, or other droid behaviors.
-
-**Format:** `[address]C[pattern][colorIndex]`
-
-| Parameter | Description | Valid Range |
-| :--- | :--- | :--- |
-| `address` | PSI target | 4 (Front PSI) or 5 (Rear PSI) |
-| `pattern` | Color slot | 1 (Color1) or 2 (Color2) |
-| `colorIndex` | Color from palette | 0-11 (see color table below) |
-
-**Color Palette:**
-| Index | Color | Index | Color |
-| :---: | :--- | :---: | :--- |
-| 0 | RED | 6 | CYAN |
-| 1 | ORANGE | 7 | PURPLE |
-| 2 | YELLOW | 8 | PINK |
-| 3 | GREEN | 9 | MAGENTA |
-| 4 | BLUE | 10 | LIME |
-| 5 | INDIGO | 11 | WHITE |
-
-**Examples:**
-```
-4C111  → Front PSI, Pattern 1 = White (11)
-5C28   → Rear PSI, Pattern 2 = Pink (8)
-4C14   → Front PSI, Pattern 1 = Blue (4)
-5C10   → Rear PSI, Pattern 1 = Red (0)
-```
-
-**Use Cases:**
-- **Movie Accurate**: `4C111` + `5C111` (White on both)
-- **KT Mode**: `4C111` + `4C28` (White + Pink on Front)
-- **Rainbow Mode**: Cycle through color indices dynamically
-- **Event Sync**: Change colors based on droid mood or actions
-
-**Note:** Color changes apply to **digital PSI strips only**. For analog PSI brightness, use the L-Command (4.7).
-
-### 4.9. Quick Help
-
-Type `??` or `help` in normal operation mode to display a quick reference of all JawaLite commands directly in the serial monitor.
-
-**Example Output:**
-```
-╔══════════════════════════════════════════════════════════╗
-║              JawaLite Protocol Quick Reference           ║
-╚══════════════════════════════════════════════════════════╝
-
-Format: [address][command][argument]
-  Address: 0=All, 1=TopFLD, 2=BottomFLD, 3=RLD, 4=FPSI, 5=RPSI
-
-Commands:
-  T[arg]  - Display state (0=test, 1=random, 20=off, 99=stop effects, 100=text)
-  M[text] - Display text message
-  P[arg]  - Alphabet (60=Latin, 61=Aurabesh)
-  R[arg]  - Random style (0-6)
-  S[arg]  - PSI state (0=test, 1=random, 2=color1, 3=color2, 4=off)
-  L[arg]  - Brightness (0-15) [NEW v4.2]
-  C[p][c] - PSI color: pattern(1-2) + color(0-11) [NEW v4.2]
-  D       - Dimension command
-
-Examples:
-  0T1      → All displays to random mode
-  1MHELLO  → Show 'HELLO' on top FLD
-  0L10     → Set all brightness to 10
-  4C111    → Front PSI pattern 1 = color 11 (white)
-  0T99     → Stop all effects
-
-Type '*' to enter configuration menu
+Button SHORT PRESS: Loading User Preset 3
+Button LONG PRESS: Lights toggled ON
 ```
 
 ---
 
-## 5. Interactive Configuration Menu
+## 4. Serial Commands (Runtime Configuration)
 
-This is the most powerful feature of the controller. It allows you to customize and save every aspect of your displays.
+The controller provides a comprehensive serial command interface at **115200 baud**. All commands are case-insensitive.
 
-**To access:** Send a single `*` character in the serial monitor.
+**Format:** `[component] [subcommand] [value]`
 
-You will see a `Config>` prompt. From here, you can enter commands to view, change, and save settings. The status line shows your active profile, PSI mode, and if you have unsaved changes.
-
-### 5.1. Main Commands
-| Command | Function |
-| :--- | :--- |
-| `help` | Shows a detailed list of commands and examples. |
-| `show` | Displays all settings for the currently active profile. |
-| `wizard` | Runs the first-time setup assistant. |
-| `diagnostics` | Runs a hardware test on all displays and PSIs. |
-| `presets` | Shows a list of 5 Quick Presets. |
-| `preset <1-5>` | Applies a Quick Preset (e.g., `preset 3`). |
-| `colors` | Lists the 12 available colors for digital PSIs and their index numbers. |
-| `set <param> <val>` | Changes a setting (see section 5.4). |
-| `profile ...` | Manages profiles (see section 5.2). |
-| `exit` | Exits the config menu and resumes normal operation. |
-
-### 5.2. Profile Management
-
-The controller supports 5 profiles for all settings.
-- **Profile 1 (Standard):** A fixed, non-editable default profile.
-- **Profile 2 (Custom):** A fixed profile set up for digital PSIs in White & Pink.
-- **Profiles 3, 4, 5 (User):** Fully customizable and saved persistently.
+### 4.1. Utility Commands
 
 | Command | Function |
 | :--- | :--- |
-| `profile show` | Displays the currently active profile number (1-5). |
-| `profile load <1-5>`| Loads and activates the specified profile. |
-| `profile save` | Saves changes to the current **user profile** (3, 4, or 5 only). |
-| `profile reset <3-5>`| Resets a user profile (3, 4, or 5) back to default settings. |
+| `help` | Shows complete command reference with examples |
+| `status` | Displays current configuration of all components |
+| `patterns` | Lists all 10 available main dome patterns |
+| `colors` | Shows 15 predefined color names |
+| `reset` | Reset all settings to firmware defaults (except presets) |
 
-### 5.3. Quick Presets
+### 4.2. Mode & Preset Commands
 
-Presets are pre-configured settings for common use cases. Applying a preset modifies your *current* profile. You must use `profile save` to keep the changes (on profiles 3-5).
-
-| Preset | Name | Description |
+| Command | Function | Example |
 | :--- | :--- | :--- |
-| 1 | Bright | Maximum brightness, fast scrolling |
-| 2 | Dim | Low brightness for dark environments |
-| 3 | KT | Colorful KT mode (White/Pink PSI) |
-| 4 | Classic | Original analog PSI look |
-| 5 | Rainbow | Colorful digital PSI rotation |
+| `load default` | Activate unchangeable Chopper Default look | `load default` |
+| `load <1-5>` | Load a custom User Preset | `load 3` |
+| `save <1-5>` | Save current config to User Preset slot | `save 2` |
+| `startup <0-5>` | Set mode to load on boot (0=Default, 1-5=User) | `startup 1` |
+| `reset presets` | Restore the 5 factory default User Presets | `reset presets` |
 
-**Usage:**
+**Note:** You cannot save over the Chopper Default (mode 0) - it is read-only.
+
+### 4.3. Main Dome Commands
+
+All main dome commands start with `main`:
+
+| Command | Function | Valid Values | Example |
+| :--- | :--- | :--- | :--- |
+| `main pattern <name>` | Set animation pattern | See section 4.4 | `main pattern rainbow` |
+| `main eyemode <mode>` | Set eye animation mode | `chopper`, `default` | `main eyemode chopper` |
+| `main color1 <color>` | Set primary color | Color name or RGB | `main color1 blue` |
+| `main color2 <color>` | Set secondary/layer color | Color name or RGB | `main color2 255,0,0` |
+| `main palette <1-5> <color>` | Set palette color slot | Slot 1-5, color | `main palette 3 purple` |
+| `main palettemode <state>` | Use palette for chase/sparkle | `on`, `off` | `main palettemode on` |
+| `main speed <ms>` | Set animation speed | 10-5000 ms | `main speed 100` |
+| `main brightness <val>` | Set master brightness | 1-255 | `main brightness 180` |
+| `main random <state>` | Enable/disable random mode | `on`, `off` | `main random on` |
+| `main on` / `main off` | Enable/disable main dome LEDs | - | `main on` |
+
+**Examples:**
 ```
-Config> presets         ← Show list
-Config> preset 3        ← Apply KT preset
-Config> profile save    ← Save to current profile
+main pattern chase
+main color1 red
+main speed 75
+main brightness 200
+main eyemode chopper
+main palette 1 orange
+main palette 2 yellow
+main palettemode on
+main random on
 ```
 
-### 5.4. Hardware Diagnostics
+### 4.4. Available Patterns
 
-If you are troubleshooting, the `diagnostics` command will test all components.
-- Flash Memory
-- Rear Logic Display
-- Front Logic Displays
-- Analog PSIs (Rear and Front)
-- Digital PSI 1 (GPIO8) and 2 (GPIO9)
-- Watchdog Timer
+| Pattern | Description |
+| :--- | :--- |
+| `original` | Classic LED-by-LED fill effect with color alternation |
+| `blink` | Simple blinking between color1 and color2 |
+| `fade` | Smooth fade in and out of color1 |
+| `rainbow` | Moving rainbow effect across the strip |
+| `chase` | Single pixel chasing on background of color2 |
+| `sparkle` | Random pixels sparkling on background of color2 |
+| `breathe` | Smooth pulsing "breathing" effect with color1 |
+| `solid` | Solid, non-animated display of color1 |
+| `layer` | Breathe effect (color1) with sparkle overlay (color2) |
+| `palette` | Smoothly cycles through the 5 palette colors |
 
-The tool also provides troubleshooting tips for common wiring issues.
+**Palette Mode:**
+When `palettemode on` is set, the `chase` and `sparkle` patterns will randomly select colors from your 5-color palette instead of using color1.
 
-### 5.5. Shorthand Commands **[NEW v4.2]**
+### 4.5. Eye Commands (1-3)
 
-For faster configuration, v4.2 introduces convenient shorthand commands:
+Control individual eyes with `eye <1-3> <subcommand>`:
 
-| Shorthand | Full Command | Description |
+| Command | Function | Valid Values | Example |
+| :--- | :--- | :--- | :--- |
+| `eye <1-3> color1 <color>` | Set primary color | Color name or RGB | `eye 1 color1 blue` |
+| `eye <1-3> color2 <color>` | Set secondary color | Color name or RGB | `eye 2 color2 yellow` |
+| `eye <1-3> speed <ms>` | Set blink speed | 10-5000 ms | `eye 3 speed 250` |
+| `eye <1-3> single` | Set single color blinking mode | - | `eye 1 single` |
+| `eye <1-3> dual` | Set dual color blinking mode | - | `eye 2 dual` |
+| `eye <1-3> random <state>` | Enable/disable random mode | `on`, `off` | `eye 1 random on` |
+| `eye <1-3> on` / `off` | Enable/disable eye LEDs | - | `eye 3 off` |
+
+**Note:** When `main eyemode chopper` is active, eye color/speed commands are ignored and the authentic Chopper animation runs instead.
+
+**Examples:**
+```
+eye 1 color1 yellow
+eye 1 color2 blue
+eye 1 dual
+eye 1 speed 150
+eye 2 random on
+```
+
+### 4.6. Periscope Commands
+
+Control the periscope LED with `periscope <subcommand>`:
+
+| Command | Function | Valid Values | Example |
+| :--- | :--- | :--- | :--- |
+| `periscope color1 <color>` | Set primary color | Color name or RGB | `periscope color1 cyan` |
+| `periscope color2 <color>` | Set secondary color | Color name or RGB | `periscope color2 white` |
+| `periscope speed <ms>` | Set blink speed | 10-5000 ms | `periscope speed 500` |
+| `periscope single` | Set single color blinking mode | - | `periscope single` |
+| `periscope dual` | Set dual color blinking mode | - | `periscope dual` |
+| `periscope random <state>` | Enable/disable random mode | `on`, `off` | `periscope random on` |
+| `periscope on` / `off` | Enable/disable periscope LED | - | `periscope on` |
+
+**Examples:**
+```
+periscope color1 cyan
+periscope speed 1000
+periscope single
+```
+
+### 4.7. Color Formats
+
+Colors can be specified in three ways:
+
+**1. Predefined Color Names (15 colors):**
+```
+red, green, blue, yellow, orange, purple, cyan, white,
+pink, lime, aqua, magenta, navy, maroon, olive
+```
+
+**2. RGB Values:**
+```
+255,0,0      → Pure red
+0,255,0      → Pure green
+128,0,255    → Purple
+```
+
+**3. Special Keywords:**
+```
+black, off   → Turn LEDs off (CRGB::Black)
+```
+
+**Examples:**
+```
+main color1 red
+main color2 128,64,255
+eye 1 color1 off
+periscope color1 cyan
+```
+
+---
+
+## 🎨 Pre-Configured User Presets
+
+The controller ships with 5 factory default user presets demonstrating different "moods" and use cases. These can be customized and overwritten.
+
+### User Preset 1: Agitated / Working
+**Theme:** Busy, active state
+
+| Component | Setting | Value |
 | :--- | :--- | :--- |
-| `p1` | `profile load 1` | Load profile 1 |
-| `p2` | `profile load 2` | Load profile 2 |
-| `p3` | `profile load 3` | Load profile 3 |
-| `p4` | `profile load 4` | Load profile 4 |
-| `p5` | `profile load 5` | Load profile 5 |
-| `s` | `show` | Display all settings |
-| `w` | `wizard` | Run setup wizard |
-| `d` | `diagnostics` | Run hardware diagnostics |
-| `q` | `quit` / `exit` | Exit config menu |
+| Main Dome | Pattern | Sparkle |
+| | Color 1 | White |
+| | Color 2 | Blue |
+| | Speed | 80 ms |
+| | Brightness | 200 |
+| Eye 1 & 2 | Color 1 | Yellow |
+| | Color 2 | Blue |
+| | Mode | Dual |
+| | Speed | 150 ms |
+| Eye 3 | Color 1 | Orange |
+| | Mode | Single |
+| Periscope | Color 1 | White |
+| | Speed | 300 ms |
 
-**Example Usage:**
-```
-Config> p3        ← Loads profile 3
-Config> s         ← Shows all settings
-Config> d         ← Runs diagnostics
-Config> q         ← Exits config menu
-```
+### User Preset 2: Angry / Attack Mode
+**Theme:** Aggressive, menacing state
 
-### 5.6. Verbose Debug Mode **[NEW v4.2]**
+| Component | Setting | Value |
+| :--- | :--- | :--- |
+| Main Dome | Pattern | Breathe |
+| | Color 1 | Red |
+| | Speed | 50 ms |
+| | Brightness | 255 |
+| All Eyes | Color 1 | Red |
+| | Speed | 200 ms |
+| Periscope | Color 1 | Red |
 
-The verbose mode provides detailed debug information about command processing, which is useful for troubleshooting and development.
+### User Preset 3: Happy / Celebratory
+**Theme:** Bright, colorful state
 
-**Commands:**
-```
-Config> verbose on      ← Enable debug output
-Config> verbose off     ← Disable debug output
-Config> verbose         ← Check current status
-```
+| Component | Setting | Value |
+| :--- | :--- | :--- |
+| Main Dome | Pattern | Rainbow |
+| | Speed | 50 ms |
+| | Brightness | 220 |
+| Eye 1 & 2 | Color 1 | Cyan |
+| | Color 2 | Yellow |
+| | Mode | Dual |
+| | Speed | 250 ms |
+| Eye 3 | Color 1 | Lime |
+| Periscope | Color 1 | Magenta |
 
-**Debug Output Example:**
-```
-Config> verbose on
-✓ Verbose mode ON - Debug output enabled
+### User Preset 4: Stealth / Undercover
+**Theme:** Dim, minimal visibility
 
-Config> exit
-> 0T1
+| Component | Setting | Value |
+| :--- | :--- | :--- |
+| Main Dome | Pattern | Fade |
+| | Color 1 | Navy |
+| | Speed | 500 ms |
+| | Brightness | 80 |
+| Eye 1 & 2 | Color 1 | Blue |
+| | Speed | 1500 ms |
+| Eye 3 | Disabled | - |
+| Periscope | Disabled | - |
 
-[DEBUG] Received: '0T1' (3 bytes)
-[DEBUG] Parsed address: 0
-[DEBUG] Command: T
-[DEBUG] Argument: 1
-[DEBUG] Executing command...
+### User Preset 5: Chopper Eyes + Palette Dome
+**Theme:** Authentic Chopper animation with warm dome
 
-Command: T, Address: 0, Arg: 1
-[DEBUG] Command completed in 2 ms
-```
-
-**Use Cases:**
-- **Troubleshooting**: Identify parsing errors or invalid commands
-- **Development**: Monitor command execution timing
-- **Learning**: Understand how JawaLite protocol is processed
-- **Integration**: Debug communication with external controllers
-
-**Note:** Verbose mode affects both normal operation (JawaLite commands) and the config menu. Disable it for cleaner output during normal use.
+| Component | Setting | Value |
+| :--- | :--- | :--- |
+| Main Dome | Pattern | Palette |
+| | Eye Mode | Chopper |
+| | Speed | 200 ms |
+| | Brightness | 200 |
+| | Palette 1 | Orange |
+| | Palette 2 | Yellow |
+| | Palette 3 | White |
+| | Palette 4 | Dark Orange |
+| | Palette 5 | Bisque |
+| Eyes 1-3 | Controlled by Chopper mode | Alternating blue + solid yellow |
+| Periscope | Color 1 | Cyan |
+| | Speed | 1000 ms |
 
 ---
 
@@ -579,85 +465,151 @@ Command: T, Address: 0, Arg: 1
 
 | Problem | Quick Fix |
 |---------|-----------|
-| No serial output | Check baud rate (9600), verify USB connection |
-| Displays not working | Verify MAX7219 wiring, check power supply |
-| PSI not responding | Check PSI mode (analog/digital), verify pin connections |
-| Random crashes | Update to latest version, check power supply stability |
-| Configuration lost | Use `profile save` command, check EEPROM status |
+| No serial output | Check baud rate (115200), verify USB connection |
+| LEDs not working | Verify WS2812B wiring, check power supply (5V), add level shifter |
+| Some strips don't light | ESP32-C3 uses bit-banging - check FastLED version (must be 3.9.0) |
+| Random crashes | Check power supply stability, verify adequate current rating |
+| Settings not saved | Wait for serial confirmation, don't power off immediately |
+| Button not responding | Check IO0 connection, verify pullup resistor (internal enabled) |
 
 ### Hardware Issues
 
-**Displays Not Working:**
-- ✅ Check MAX7219 wiring (DATA, CLK, CS)
-- ✅ Verify power supply (5V, adequate current)
-- ✅ Test with `diagnostics` command
-- ✅ Check SPI connections
+**LEDs Not Working:**
+- ✅ Check WS2812B data line wiring (correct GPIO pins)
+- ✅ Verify power supply (5V, adequate current - minimum 2-3A)
+- ✅ Add 3.3V to 5V level shifter on data lines
+- ✅ Check ground connection between ESP32 and LED power supply
+- ✅ Test with simple FastLED blink sketch first
 
-**PSI Not Responding:**
-- ✅ Verify PSI mode (analog/digital) with `show` command
-- ✅ Check pin connections (GPIO8/GPIO9 for digital)
-- ✅ Test with `4S1` (Front PSI random) command
-- ✅ Verify NeoPixel power (5V) for digital PSIs
+**Some Strips Work, Others Don't:**
+- ✅ Verify FastLED library version is **exactly 3.9.0**
+- ✅ ESP32-C3 has only 2 RMT channels - newer FastLED versions may fail
+- ✅ Check individual strip power connections
+- ✅ Verify correct GPIO pins in code (lines 63-67)
+
+**Button Not Responding:**
+- ✅ Verify button connected between IO0 and GND
+- ✅ Use normally-open (NO) momentary switch
+- ✅ Internal pullup is enabled - no external resistor needed
+- ✅ Check for loose connections
 
 ### Software Issues
 
 **Configuration Problems:**
 ```
-Config> show            ← Verify settings
-Config> profile reset 3 ← Reset profile to defaults
-Config> save            ← Save configuration
+status              ← Verify all settings
+reset               ← Reset to firmware defaults
+reset presets       ← Restore factory presets
+load default        ← Load Chopper Default mode
 ```
 
 **Serial Communication Issues:**
-- ✅ Set baud rate to 9600
+- ✅ Set baud rate to **115200** (not 9600!)
 - ✅ Select correct COM port
-- ✅ Check USB cable quality
+- ✅ Check USB cable quality (data cable, not charge-only)
 - ✅ Press EN/RST button if ESP32 doesn't respond
+- ✅ Enable "USB CDC On Boot" in Arduino IDE board settings
+
+**Settings Not Persisting:**
+- ✅ Wait for serial confirmation after save commands
+- ✅ Don't power off immediately after saving
+- ✅ Check ESP32 flash is not full (unlikely with 4MB)
+- ✅ Try `reset` command to clear corrupted preferences
 
 ---
 
-## 📊 System Monitoring
+## 📊 System Information
 
-### Status Information
+### Status Display
 
-```
-Config> show            ← Complete configuration display
-Config> profile show    ← Active profile
-Config> colors          ← Color palette reference
-```
-
-### Debug Mode
+Type `status` in the serial monitor to see complete configuration:
 
 ```
-Config> verbose on      ← Enable detailed logging
-> 0T1                   ← Test commands
-Config> verbose off     ← Disable logging
+=== Current System Configuration ===
+  ACTIVE MODE: User Preset 3
+
+Main Dome & Global:
+  Enabled: Yes
+  Random Mode: OFF
+  Eye Mode: Default
+  Pattern: rainbow
+  Speed: 50 ms
+  Brightness: 220
+  Color 1 (RGB): 255,255,255
+  Color 2 (RGB): 0,0,0
+  Palette Mode: OFF
+    Palette 1: 0,0,255
+    ...
+
+Eye 1:
+  Enabled: Yes
+  Random Mode: OFF
+  Mode: Dual Color
+  Speed: 250 ms
+  Color 1 (RGB): 0,255,255
+  Color 2 (RGB): 255,255,0
+...
 ```
-
----
-
-## 🎯 Performance Optimization
-
-### Response Time
-- L-Command: Instant brightness application
-- C-Command: Applied on next PSI update cycle
-- T99-Command: Immediate effect stop
 
 ### Memory Usage
-- Flash: ~350KB program + 64KB EEPROM
-- RAM: Dynamic allocation for displays
-- No memory leaks in v4.2
+- **Flash Program Size**: ~50-60 KB
+- **SRAM (Global Variables)**: ~8 KB
+- **Preferences (Flash)**: ~2 KB per preset
+- **Total Flash**: 4MB available, <1% used
+
+### Performance Metrics
+- **LED Update Rate**: ~60 FPS (limited by FastLED.show())
+- **Serial Command Latency**: <5ms
+- **Button Debounce**: None (handled by press duration)
+- **Random Mode Interval**: 15 seconds per component
+
+---
+
+## 🎯 Advanced Configuration
+
+### Customizing LED Counts
+
+To adjust LED counts (e.g., different ring sizes), edit lines 53-55:
+
+```cpp
+#define NUM_LEDS_MAIN       19  // Change to your main dome LED count
+#define NUM_LEDS_EYE        7   // Change to your eye LED count
+#define NUM_LEDS_PERISCOPE  1   // Change to your periscope LED count
+```
+
+**Note:** After changing these values, you must recompile and upload the sketch.
+
+### Customizing Timing Constants
+
+Edit lines 70-72 to adjust behavior:
+
+```cpp
+#define RANDOM_INTERVAL 15000      // Time between random changes (ms)
+#define TRANSITION_TIME 250        // Crossfade duration (ms)
+#define CHOPPER_EYE_INTERVAL 400   // Chopper eye blink speed (ms)
+```
+
+### Customizing Default Presets
+
+The factory default presets are defined in the `factoryResetPresets()` function (lines 309-420). You can customize these before uploading to create your own "default" presets.
 
 ---
 
 ## 🚀 Future Expansion
 
 ### Planned Features
-- Enhanced animation effects
-- External sensor integration
-- OTA (Over-The-Air) updates
-- Bluetooth control
-- Mobile app integration
+- Wi-Fi control via web interface
+- Integration with other droid control systems
+- Sound-reactive patterns
+- Mobile app for preset management
+- OTA (Over-The-Air) firmware updates
+
+### Community Contributions
+This is an open-source project. Contributions are welcome:
+- Additional animation patterns
+- New color palettes
+- Hardware integration guides
+- Bug fixes and optimizations
 
 ---
 
@@ -666,17 +618,19 @@ Config> verbose off     ← Disable logging
 ### Getting Help
 
 1. **Check this README** for common solutions
-2. **Review Serial Monitor** output (9600 baud) for error messages
-3. **Use `diagnostics`** command to test hardware
-4. **Enable verbose mode** for detailed debugging
+2. **Review Serial Monitor** output (115200 baud) for error messages
+3. **Test with factory presets** to verify hardware
+4. **Use diagnostics commands**: `status`, `patterns`, `colors`
 
-### Diagnostic Commands
+### Reporting Issues
 
-```
-Config> diagnostics     ← Complete hardware test
-Config> show            ← Configuration verification
-Config> verbose on      ← Enable debug mode
-```
+When reporting problems, please include:
+- ESP32-C3 board model
+- FastLED library version (must be 3.9.0)
+- Power supply specifications
+- LED strip details (WS2812B type, LED count)
+- Serial monitor output (115200 baud)
+- Steps to reproduce the issue
 
 ---
 
@@ -684,12 +638,19 @@ Config> verbose on      ← Enable debug mode
 
 ### Project Credits
 - **Software Development**: Printed-Droid.com
-- **Hardware Compatibility**: Printed Droid Teeces32 Boards (ESP32-C3 Mini, MAX7219, NeoPixel)
+- **Hardware Platform**: ESP32-C3 Mini (Espressif Systems)
+- **LED Technology**: WS2812B addressable LEDs
+- **Inspired by**: Star Wars Rebels - C1-10P "Chopper" Droid
 
 ### Open Source Libraries
-- **LedControl**: MAX7219 LED control
-- **Adafruit NeoPixel**: WS2812B/NeoPixel LED control
+- **FastLED 3.9.0**: High-performance LED control library
+- **ESP32 Preferences**: EEPROM emulation for settings persistence
 - **ESP32 Arduino Core**: ESP32-C3 support
+
+### Special Thanks
+- Star Wars Rebels creators for the amazing Chopper character
+- R2-D2 Builders Club community
+- ESP32 and FastLED development communities
 
 ### Disclaimer
 
@@ -698,15 +659,78 @@ Config> verbose on      ← Enable debug mode
 This project involves electrical components and LED displays. Users are responsible for:
 
 - Proper electrical safety and insulation
-- Adequate power supply sizing and protection
+- Adequate power supply sizing and protection (minimum 2-3A for all LEDs)
 - Safe assembly and operation
 - Compliance with local electrical codes
 - Testing all functions before final installation
+- Proper heat dissipation (WS2812B LEDs can get warm at high brightness)
 
 **BUILD AT YOUR OWN RISK.** Ensure proper knowledge of electronics and safety practices. The authors assume no responsibility for damage, injury, or malfunction resulting from use of this design.
+
+**Power Supply Guidelines:**
+- Use regulated 5V supply with adequate current rating
+- Connect power directly to LED strips (not through ESP32)
+- Use thick gauge wire for power distribution (minimum 22 AWG)
+- Add bulk capacitor (1000µF) near ESP32 for stability
+- Add 330Ω resistor on each data line (between ESP32 and first LED)
+
+---
+
+## 📸 Example Configurations
+
+### Movie-Accurate Chopper Default
+```
+load default
+```
+- Red chase pattern on dome
+- Alternating blue eyes (Eyes 1 & 2)
+- Solid yellow third eye (Eye 3)
+- Cyan blinking periscope
+
+### Colorful Party Mode
+```
+load 3
+```
+or via serial commands:
+```
+main pattern rainbow
+main brightness 220
+eye 1 color1 cyan
+eye 1 color2 yellow
+eye 1 dual
+eye 2 color1 cyan
+eye 2 color2 yellow
+eye 2 dual
+periscope color1 magenta
+save 3
+```
+
+### Stealth Mode
+```
+load 4
+```
+or via serial commands:
+```
+main pattern fade
+main color1 navy
+main brightness 80
+main speed 500
+eye 1 color1 blue
+eye 1 speed 1500
+eye 2 color1 blue
+eye 2 speed 1500
+eye 3 off
+periscope off
+save 4
+```
 
 ---
 
 **May the Force be with your build!** 🌟
 
-*For the latest updates and community support, visit: https://github.com/PrintedDroid/Teeces-ESP32*
+*For the latest updates and community support, visit: [www.printed-droid.com](https://www.printed-droid.com)*
+
+**Version**: v5.2
+**Last Updated**: July 2025
+**Compatible Hardware**: ESP32-C3 Mini + WS2812B LED Strips
+**Required Library**: FastLED 3.9.0
