@@ -102,6 +102,7 @@ unsigned long lastComponentUpdate[4]={0}, lastRandomUpdate[5]={0};
 uint8_t mainState=0, paletteState=0, rainbowIndex=0;
 int currentMode = 0; // 0 = Chopper Default, 1-5 = User Presets
 bool componentStates[4]={false}, originalPhase=true, inTransition=false, buttonActive=false, chopperEye1State = true;
+bool ledsNeedUpdate = false; // Dirty flag for FastLED.show() optimization
 
 // Serial command buffer
 const byte SERIAL_BUFFER_SIZE = 128;
@@ -152,105 +153,149 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-
   randomSeed(esp_random());
-  
-  Serial.println("\n==================================================");
-  Serial.println("    Welcome to Chopper Dome Logics v5.2");
-  Serial.println("    (Presets, Button & Chopper Eyes)");
-  Serial.println("             www.printed-droid.com");
-  Serial.println("==================================================");
 
-  preferences.begin("chopper-v53-en", false);
+  Serial.println(F("\n=================================================="));
+  Serial.println(F("    Welcome to Chopper Dome Logics v5.2"));
+  Serial.println(F("    (Presets, Button & Chopper Eyes)"));
+  Serial.println(F("             www.printed-droid.com"));
+  Serial.println(F("=================================================="));
+
+  preferences.begin("chopper-v52-en", false);
 
   if (!preferences.getBool("presetsInited", false)) {
     factoryResetPresets();
     preferences.putBool("presetsInited", true);
-    Serial.println("✓ First boot: Factory presets have been created.");
+    Serial.println(F("✓ First boot: Factory presets have been created."));
   }
-  
-int startupMode = preferences.getUChar("startupMode", 0); // Default to loading Mode 0
+
+  int startupMode = preferences.getUChar("startupMode", 0);
   currentMode = startupMode;
   if (currentMode == 0) {
     activateChopperDefault();
-    Serial.println("✓ Loaded Chopper Default on startup.");
+    Serial.println(F("✓ Loaded Chopper Default on startup."));
   } else {
     loadPreset(currentMode);
-    Serial.println("✓ Loaded User Preset " + String(currentMode) + " on startup.");
+    Serial.print(F("✓ Loaded User Preset "));
+    Serial.print(currentMode);
+    Serial.println(F(" on startup."));
   }
-  
-  Serial.println("\nInitializing LED strips...");
+
+  Serial.println(F("\n✓ Button control on IO0 initialized."));
+  Serial.println(F("  - Short press: Cycle presets"));
+  Serial.println(F("  - Long press (>3s): Toggle lights ON/OFF"));
+
+  Serial.println(F("\nInitializing LED strips..."));
   FastLED.addLeds<WS2812B, LED_PIN_MAIN, GRB>(leds_main, NUM_LEDS_MAIN);
   FastLED.addLeds<WS2812B, LED_PIN_EYE1, GRB>(leds_eye1, NUM_LEDS_EYE);
   FastLED.addLeds<WS2812B, LED_PIN_EYE2, GRB>(leds_eye2, NUM_LEDS_EYE);
   FastLED.addLeds<WS2812B, LED_PIN_EYE3, GRB>(leds_eye3, NUM_LEDS_EYE);
   FastLED.addLeds<WS2812B, LED_PIN_PERISCOPE, GRB>(leds_periscope, NUM_LEDS_PERISCOPE);
-  
+
   FastLED.setBrightness(mainConfig.brightness);
   FastLED.clear();
   FastLED.show();
-  Serial.println("✓ Button on IO0 initialized.");
-  Serial.println("✓ System ready! Enter 'help' for available commands.\n");
+  Serial.println(F("✓ LED strips initialized."));
+  Serial.println(F("✓ System ready! Enter 'help' for available commands.\n"));
 }
 
 
 // ################### MAIN LOOP ###################
 void loop() {
+  // Serial command processing
   while (Serial.available()) {
     char inChar = (char)Serial.read();
-    if (inChar == '\n') { if (bufferPosition > 0) { serialBuffer[bufferPosition] = '\0'; processSerialCommand(serialBuffer); bufferPosition = 0; serialBuffer[0] = '\0'; } } 
-    else if (inChar != '\r') { if (bufferPosition < SERIAL_BUFFER_SIZE - 1) serialBuffer[bufferPosition++] = inChar; }
-  }
-  
-  handleButton();
-  updateRandomModes();
-  
-  if (mainConfig.enabled) {
-    updateMainPattern();
-  } else {
-    fill_solid(leds_main, NUM_LEDS_MAIN, CRGB::Black);
-  }
-  
-  if (mainConfig.chopperEyeMode) {
-    updateChopperEyes();
-    if (componentConfigs[3].enabled) { updateComponent(3); } 
-    else { fill_solid(leds_periscope, NUM_LEDS_PERISCOPE, CRGB::Black); }
-  } else {
-    for (int i = 0; i < 4; i++) {
-      if (componentConfigs[i].enabled) { updateComponent(i); } 
-      else { fill_solid(getComponentLeds(i), (i < 3 ? NUM_LEDS_EYE : NUM_LEDS_PERISCOPE), CRGB::Black); }
+    if (inChar == '\n') {
+      if (bufferPosition > 0) {
+        serialBuffer[bufferPosition] = '\0';
+        processSerialCommand(serialBuffer);
+        bufferPosition = 0;
+        serialBuffer[0] = '\0';
+      }
+    } else if (inChar != '\r') {
+      // Buffer overflow protection
+      if (bufferPosition < SERIAL_BUFFER_SIZE - 1) {
+        serialBuffer[bufferPosition++] = inChar;
+      }
     }
   }
-  
-  FastLED.show();
+
+  handleButton();
+  updateRandomModes();
+
+  // Main dome update
+  if (mainConfig.enabled) {
+    updateMainPattern();
+    ledsNeedUpdate = true;
+  } else {
+    fill_solid(leds_main, NUM_LEDS_MAIN, CRGB::Black);
+    ledsNeedUpdate = true;
+  }
+
+  // Eyes and periscope update
+  if (mainConfig.chopperEyeMode) {
+    updateChopperEyes();
+    ledsNeedUpdate = true;
+    if (componentConfigs[3].enabled) {
+      updateComponent(3);
+      ledsNeedUpdate = true;
+    } else {
+      fill_solid(leds_periscope, NUM_LEDS_PERISCOPE, CRGB::Black);
+      ledsNeedUpdate = true;
+    }
+  } else {
+    for (int i = 0; i < 4; i++) {
+      if (componentConfigs[i].enabled) {
+        updateComponent(i);
+        ledsNeedUpdate = true;
+      } else {
+        CRGB* leds = getComponentLeds(i);
+        if (leds != nullptr) {
+          fill_solid(leds, (i < 3 ? NUM_LEDS_EYE : NUM_LEDS_PERISCOPE), CRGB::Black);
+          ledsNeedUpdate = true;
+        }
+      }
+    }
+  }
+
+  // Only update LEDs if something changed
+  if (ledsNeedUpdate) {
+    FastLED.show();
+    ledsNeedUpdate = false;
+  }
 }
 
 
 // ################### BUTTON & PRESET LOGIC ###################
 void handleButton() {
   bool currentState = (digitalRead(BUTTON_PIN) == LOW);
-  if (currentState && !buttonActive) { pressStartTime = millis(); buttonActive = true; }
+  if (currentState && !buttonActive) {
+    pressStartTime = millis();
+    buttonActive = true;
+  }
   if (!currentState && buttonActive) {
     unsigned long pressDuration = millis() - pressStartTime;
     if (pressDuration >= LONG_PRESS_TIME) {
       bool newState = !mainConfig.enabled;
       mainConfig.enabled = newState;
       for(int i=0; i<4; i++) componentConfigs[i].enabled = newState;
-      Serial.println(String("Button LONG PRESS: Lights toggled ") + (newState ? "ON" : "OFF"));
+      Serial.print(F("Button LONG PRESS: Lights toggled "));
+      Serial.println(newState ? F("ON") : F("OFF"));
       saveMainConfig();
       for(int i=0; i<4; i++) saveComponentConfig(i);
     } else {
-      // --- SHORT PRESS: Cycle through all modes ---
+      // SHORT PRESS: Cycle through all modes
       currentMode++;
-      if (currentMode > NUM_PRESETS) { // Cycle from 5 back to 0 (Default)
-        currentMode = 0;
+      if (currentMode > NUM_PRESETS) {
+        currentMode = 0; // Cycle from 5 back to 0 (Default)
       }
 
       if (currentMode == 0) {
-        Serial.println("Button SHORT PRESS: Loading Chopper Default Mode");
+        Serial.println(F("Button SHORT PRESS: Loading Chopper Default Mode"));
         activateChopperDefault();
       } else {
-        Serial.println("Button SHORT PRESS: Loading User Preset " + String(currentMode));
+        Serial.print(F("Button SHORT PRESS: Loading User Preset "));
+        Serial.println(currentMode);
         loadPreset(currentMode);
       }
     }
@@ -284,30 +329,35 @@ void activateChopperDefault() {
 
 void savePreset(int index, Preset& p) {
   if (index < 1 || index > NUM_PRESETS) return;
-  String key = "preset" + String(index);
-  preferences.putBytes(key.c_str(), &p, sizeof(Preset));
+  char key[16];
+  snprintf(key, sizeof(key), "preset%d", index);
+  preferences.putBytes(key, &p, sizeof(Preset));
 }
 
 void loadPreset(int index) {
   if (index < 1 || index > NUM_PRESETS) return;
-  currentMode = index; // Set the global mode to the loaded preset
+  currentMode = index;
   Preset loadedPreset;
-  String key = "preset" + String(index);
-  if (preferences.getBytes(key.c_str(), &loadedPreset, sizeof(Preset))) {
+  char key[16];
+  snprintf(key, sizeof(key), "preset%d", index);
+  if (preferences.getBytes(key, &loadedPreset, sizeof(Preset))) {
     memcpy(&mainConfig, &loadedPreset.main, sizeof(MainConfig));
     memcpy(&componentConfigs, &loadedPreset.components, sizeof(ComponentConfig) * 4);
     FastLED.setBrightness(mainConfig.brightness);
     memcpy(leds_main_buffer, leds_main, sizeof(leds_main));
     transitionStartTime = millis();
     inTransition = true;
-    Serial.println("Successfully loaded preset " + String(index));
+    Serial.print(F("Successfully loaded preset "));
+    Serial.println(index);
   } else {
-    Serial.println("Preset " + String(index) + " is empty. Nothing loaded.");
+    Serial.print(F("Preset "));
+    Serial.print(index);
+    Serial.println(F(" is empty. Nothing loaded."));
   }
 }
 
 void factoryResetPresets() {
-  Serial.println("Creating factory default user presets...");
+  Serial.println(F("Creating factory default user presets..."));
   Preset p; // A temporary Preset object we will fill with data
 
   // ===================================================================================
@@ -416,7 +466,7 @@ void factoryResetPresets() {
   p.components[3] = {CRGB::Cyan, CRGB::Black, 1000, false, true, false}; // Periscope is independent
   savePreset(5, p);
 
-  Serial.println("Default user presets 1-5 created and saved.");
+  Serial.println(F("Default user presets 1-5 created and saved."));
 }
 
 // ################### SERIAL COMMAND PROCESSING ###################
@@ -622,9 +672,43 @@ void updateChopperEyes() {
 }
 
 void updateRandomModes() {
-  unsigned long currentTime=millis();
-  if (mainConfig.isRandom&&mainConfig.enabled) { if(currentTime-lastRandomUpdate[0]>=RANDOM_INTERVAL){ setMainPattern(getPatternName((PatternType)random(PATTERN_BLINK,PATTERN_SOLID+1))); mainConfig.color1=COLORS[random(15)]; mainConfig.color2=(random(2)==1)?CRGB::Black:COLORS[random(15)]; mainConfig.speed=random(50,301); mainConfig.usePalette=(random(4)==0); Serial.println(String("[RANDOM] Main Dome: New pattern -> ")+getPatternName(mainConfig.pattern)); lastRandomUpdate[0]=currentTime; } }
-  for(int i=0;i<4;i++){ if(componentConfigs[i].isRandom&&componentConfigs[i].enabled){ if(currentTime-lastRandomUpdate[i+1]>=RANDOM_INTERVAL){ componentConfigs[i].color1=COLORS[random(15)]; componentConfigs[i].color2=COLORS[random(15)]; componentConfigs[i].blinkInterval=random(100,501); componentConfigs[i].twoColor=(random(3)>0); String n=(i<3)?"Eye "+String(i+1):"Periscope"; Serial.println("[RANDOM] "+n+": New random settings applied."); lastRandomUpdate[i+1]=currentTime; } } }
+  unsigned long currentTime = millis();
+
+  // Random mode for main dome
+  if (mainConfig.isRandom && mainConfig.enabled) {
+    if (currentTime - lastRandomUpdate[0] >= RANDOM_INTERVAL) {
+      PatternType newPattern = (PatternType)random(PATTERN_BLINK, PATTERN_SOLID+1);
+      setMainPattern(getPatternName(newPattern));
+      mainConfig.color1 = COLORS[random(15)];
+      mainConfig.color2 = (random(2) == 1) ? CRGB::Black : COLORS[random(15)];
+      mainConfig.speed = random(50, 301);
+      mainConfig.usePalette = (random(4) == 0);
+      Serial.print(F("[RANDOM] Main Dome: New pattern -> "));
+      Serial.println(getPatternName(mainConfig.pattern));
+      lastRandomUpdate[0] = currentTime;
+    }
+  }
+
+  // Random mode for components (eyes + periscope)
+  for(int i = 0; i < 4; i++) {
+    if (componentConfigs[i].isRandom && componentConfigs[i].enabled) {
+      if (currentTime - lastRandomUpdate[i+1] >= RANDOM_INTERVAL) {
+        componentConfigs[i].color1 = COLORS[random(15)];
+        componentConfigs[i].color2 = COLORS[random(15)];
+        componentConfigs[i].blinkInterval = random(100, 501);
+        componentConfigs[i].twoColor = (random(3) > 0);
+        Serial.print(F("[RANDOM] "));
+        if (i < 3) {
+          Serial.print(F("Eye "));
+          Serial.print(i+1);
+        } else {
+          Serial.print(F("Periscope"));
+        }
+        Serial.println(F(": New random settings applied."));
+        lastRandomUpdate[i+1] = currentTime;
+      }
+    }
+  }
 }
 
 CRGB* getComponentLeds(int index) {
@@ -717,29 +801,75 @@ void printPatterns() {
 }
 
 void printStatus() {
-    Serial.println("\n=== Current System Configuration ===");
-    String modeString = (currentMode == 0) ? "Chopper Default" : "User Preset " + String(currentMode);
-    Serial.println("  ACTIVE MODE: " + modeString);
-    Serial.println("\nMain Dome & Global:");
-    Serial.println("  Enabled: " + String(mainConfig.enabled ? "Yes" : "No"));
-    Serial.println("  Random Mode: " + String(mainConfig.isRandom ? "ON" : "OFF"));
-    Serial.println("  Eye Mode: " + String(mainConfig.chopperEyeMode ? "Chopper" : "Default"));
-    Serial.println(String("  Pattern: ") + getPatternName(mainConfig.pattern));
-    Serial.println("  Speed: " + String(mainConfig.speed) + " ms");
-    Serial.println("  Brightness: " + String(mainConfig.brightness));
-    Serial.println("  Color 1 (RGB): " + String(mainConfig.color1.r) + "," + String(mainConfig.color1.g) + "," + String(mainConfig.color1.b));
-    Serial.println("  Color 2 (RGB): " + String(mainConfig.color2.r) + "," + String(mainConfig.color2.g) + "," + String(mainConfig.color2.b));
-    Serial.println("  Palette Mode: " + String(mainConfig.usePalette ? "ON" : "OFF"));
-    for(int i=0;i<PALETTE_SIZE;i++) Serial.println("    Palette "+String(i+1)+": "+String(mainConfig.colorPalette[i].r)+","+String(mainConfig.colorPalette[i].g)+","+String(mainConfig.colorPalette[i].b));
-    for(int i=0;i<4;i++) {
-        String name=(i<3)?"Eye "+String(i+1):"Periscope";
-        Serial.println("\n" + name + ":");
-        Serial.println("  Enabled: " + String(componentConfigs[i].enabled ? "Yes" : "No"));
-        Serial.println("  Random Mode: " + String(componentConfigs[i].isRandom ? "ON" : "OFF"));
-        Serial.println("  Mode: " + String(componentConfigs[i].twoColor ? "Dual Color" : "Single Color"));
-        Serial.println("  Speed: " + String(componentConfigs[i].blinkInterval) + " ms");
-        Serial.println("  Color 1 (RGB): "+String(componentConfigs[i].color1.r)+","+String(componentConfigs[i].color1.g)+","+String(componentConfigs[i].color1.b));
-        Serial.println("  Color 2 (RGB): "+String(componentConfigs[i].color2.r)+","+String(componentConfigs[i].color2.g)+","+String(componentConfigs[i].color2.b));
+    Serial.println(F("\n=== Current System Configuration ==="));
+    Serial.print(F("  ACTIVE MODE: "));
+    if (currentMode == 0) {
+      Serial.println(F("Chopper Default"));
+    } else {
+      Serial.print(F("User Preset "));
+      Serial.println(currentMode);
+    }
+
+    Serial.println(F("\nMain Dome & Global:"));
+    Serial.print(F("  Enabled: "));
+    Serial.println(mainConfig.enabled ? F("Yes") : F("No"));
+    Serial.print(F("  Random Mode: "));
+    Serial.println(mainConfig.isRandom ? F("ON") : F("OFF"));
+    Serial.print(F("  Eye Mode: "));
+    Serial.println(mainConfig.chopperEyeMode ? F("Chopper") : F("Default"));
+    Serial.print(F("  Pattern: "));
+    Serial.println(getPatternName(mainConfig.pattern));
+    Serial.print(F("  Speed: "));
+    Serial.print(mainConfig.speed);
+    Serial.println(F(" ms"));
+    Serial.print(F("  Brightness: "));
+    Serial.println(mainConfig.brightness);
+    Serial.print(F("  Color 1 (RGB): "));
+    Serial.print(mainConfig.color1.r); Serial.print(',');
+    Serial.print(mainConfig.color1.g); Serial.print(',');
+    Serial.println(mainConfig.color1.b);
+    Serial.print(F("  Color 2 (RGB): "));
+    Serial.print(mainConfig.color2.r); Serial.print(',');
+    Serial.print(mainConfig.color2.g); Serial.print(',');
+    Serial.println(mainConfig.color2.b);
+    Serial.print(F("  Palette Mode: "));
+    Serial.println(mainConfig.usePalette ? F("ON") : F("OFF"));
+
+    for(int i=0; i<PALETTE_SIZE; i++) {
+      Serial.print(F("    Palette "));
+      Serial.print(i+1);
+      Serial.print(F(": "));
+      Serial.print(mainConfig.colorPalette[i].r); Serial.print(',');
+      Serial.print(mainConfig.colorPalette[i].g); Serial.print(',');
+      Serial.println(mainConfig.colorPalette[i].b);
+    }
+
+    for(int i=0; i<4; i++) {
+        Serial.println();
+        if (i < 3) {
+          Serial.print(F("Eye "));
+          Serial.print(i+1);
+          Serial.println(':');
+        } else {
+          Serial.println(F("Periscope:"));
+        }
+        Serial.print(F("  Enabled: "));
+        Serial.println(componentConfigs[i].enabled ? F("Yes") : F("No"));
+        Serial.print(F("  Random Mode: "));
+        Serial.println(componentConfigs[i].isRandom ? F("ON") : F("OFF"));
+        Serial.print(F("  Mode: "));
+        Serial.println(componentConfigs[i].twoColor ? F("Dual Color") : F("Single Color"));
+        Serial.print(F("  Speed: "));
+        Serial.print(componentConfigs[i].blinkInterval);
+        Serial.println(F(" ms"));
+        Serial.print(F("  Color 1 (RGB): "));
+        Serial.print(componentConfigs[i].color1.r); Serial.print(',');
+        Serial.print(componentConfigs[i].color1.g); Serial.print(',');
+        Serial.println(componentConfigs[i].color1.b);
+        Serial.print(F("  Color 2 (RGB): "));
+        Serial.print(componentConfigs[i].color2.r); Serial.print(',');
+        Serial.print(componentConfigs[i].color2.g); Serial.print(',');
+        Serial.println(componentConfigs[i].color2.b);
     }
     Serial.println();
 }
@@ -753,7 +883,7 @@ void resetToDefaults() {
   for(int i=0; i<4; i++) saveComponentConfig(i);
   factoryResetPresets();
   preferences.putBool("presetsInited", true);
-  Serial.println("All settings and presets have been reset to firmware defaults.");
+  Serial.println(F("All settings and presets have been reset to firmware defaults."));
 }
 
 // ################### PERSISTENCE HELPERS ###################
