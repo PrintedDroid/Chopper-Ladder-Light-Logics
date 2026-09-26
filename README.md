@@ -1,6 +1,8 @@
 # ESP32 Chopper Dome Logics v5.2
 **Advanced ESP32-C3 Mini controller for Star Wars Chopper droid dome and eye lighting**
 
+> **Also available for Arduino Nano:** `Chopper_ladderlights_ArduinoNano_v4.2/` - see [Arduino Nano Version (v4.2)](#arduino-nano-version-v42).
+
 ## 🤖 Project Overview
 
 This enhanced controller brings your Chopper droid's dome and eye lighting to life with smooth animations, customizable patterns, and authentic "Chopper" eye animations. Designed for builders who demand professional results with maximum flexibility.
@@ -456,6 +458,36 @@ The controller ships with 5 factory default user presets demonstrating different
 | Eyes 1-3 | Controlled by Chopper mode | Alternating blue + solid yellow |
 | Periscope | Color 1 | Cyan |
 | | Speed | 1000 ms |
+
+---
+
+## Arduino Nano Version (v4.2)
+
+The folder `Chopper_ladderlights_ArduinoNano_v4.2/` contains a port for the **Arduino Nano** (ATmega328P).
+Same LED layout and the same serial commands as the ESP32-C3 version, with a few features left out to fit
+the Nano's memory.
+
+### Pins (Arduino Nano)
+
+| Function | Pin |
+| :--- | :--- |
+| Main Dome (Ladder Light, 19 LEDs) | D9 |
+| Eye 1 / Eye 2 / Eye 3 (7 LEDs each) | D10 / D11 / D12 |
+| Periscope (1 LED) | D13 |
+| Button | D2 |
+
+### Differences to the ESP32-C3 version
+
+- Settings are stored in the Nano's EEPROM
+- 8 main dome patterns: `layer` and `palette` are not available, and there is no palette mode
+- No authentic Chopper eye mode
+- Mode 0 is the basic default configuration instead of the fixed "Chopper Default" look;
+  `load default` and `reset presets` are not available
+- Long press is 1 second instead of 3 seconds
+
+Everything else works the same way: 5 user presets (`save <1-5>`, `load <0-5>`, `startup <0-5>`),
+random mode, the same 15 predefined colors plus custom RGB, eye and periscope commands, and
+`help` / `status` / `patterns` / `colors`. Serial monitor at 115200 baud, FastLED 3.9.0.
 
 ---
 
